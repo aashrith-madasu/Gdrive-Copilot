@@ -3,16 +3,20 @@ import json
 import asyncio
 import requests
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from passlib.hash import bcrypt
 
-from request_types import (
-    AuthRequest, SearchRequest
-)
+from database import SessionLocal, engine
+import models
+import schemas
 from agent import agent
 from utils import ingest_data
 
 
+
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -25,9 +29,63 @@ app.add_middleware(
 )
 
 
-@app.get("/hello")
-def say_hello():
-    return "hello"
+# Dependency: get db session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# Utility: hash password
+def hash_password(password: str):
+    return bcrypt.hash(password)
+
+# Utility: verify password
+def verify_password(plain, hashed):
+    return bcrypt.verify(plain, hashed)
+
+
+@app.post("/register", response_model=schemas.UserOut)
+def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.username == user.username).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    
+    hashed_pw = hash_password(user.password)
+    new_user = models.User(username=user.username, hashed_password=hashed_pw)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
+
+
+@app.post("/login")
+def login(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.username == user.username).first()
+    
+    if not db_user:
+        # register
+        print("Registering new user... ")
+        if len(user.username) < 5 or len(user.password) < 5:
+            raise HTTPException(status_code=401, detail="Username or password too small")
+        
+        hashed_pw = hash_password(user.password)
+        new_user = models.User(username=user.username, hashed_password=hashed_pw)
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        return {"message": "Register successful", "user_id": new_user.id}
+        
+    elif not verify_password(user.password, db_user.hashed_password):
+        print("Password incorrect")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    else:
+        print("User logged in ... ")
+        return {"message": "Login successful", "user_id": db_user.id}
+
+
 
 @app.get("/ingestion_status")
 def get_ingestion_status():
@@ -40,7 +98,7 @@ def get_ingestion_status():
 
 
 @app.post("/auth")
-async def authenticate(request: AuthRequest):
+async def authenticate(request: schemas.AuthRequest):
     
     response = requests.post(
         url="https://oauth2.googleapis.com/token",
@@ -64,7 +122,7 @@ async def authenticate(request: AuthRequest):
 
 
 @app.post("/search")
-def search(request: SearchRequest):
+def search(request: schemas.SearchRequest):
     
     print("in search endpoint")
     

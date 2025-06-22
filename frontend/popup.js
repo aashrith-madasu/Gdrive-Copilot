@@ -1,3 +1,15 @@
+BACKEND_URL = "http://localhost:8000"
+
+// On popup load
+chrome.storage.local.get(["username", "userId"], (data) => {
+  if (data.username) {
+    document.getElementById("login-page").hidden = true;
+    document.getElementById("user").innerHTML = `User : ${data.username}`;
+  } else {
+    document.getElementById("main-page").hidden = true;
+  }
+});
+
 
 function authenticate() {
 
@@ -74,13 +86,12 @@ function refreshIngestionStatus() {
 
 function submitQuery() {
 
-  const selected_file = document.getElementById("selected-file").value;
   const query = document.getElementById("query").value;
 
   fetch("http://localhost:8000/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ document_name: selected_file, query: query })
+      body: JSON.stringify({ query: query })
   })
   .then(res => res.json())
   .then(data => {
@@ -95,6 +106,49 @@ function submitQuery() {
 
 }
 
+async function handleLogin() {
+
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  const res = await fetch(`${BACKEND_URL}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password })
+  });
+
+  const result = await res.json();
+  const resultEl = document.getElementById("result");
+
+  if (res.ok) {
+    resultEl.innerText = "Login successful!";
+
+    // ✅ Store username and user_id
+    chrome.storage.local.set({
+      username: username,
+      userId: result.user_id
+    }, () => {
+      document.getElementById("user").innerHTML = `User : ${username}`;
+      document.getElementById("login-page").hidden = true;
+      document.getElementById("main-page").hidden = false;
+    });
+
+  } else {
+    resultEl.innerText = result.detail || "Login failed.";
+  }
+}
+
+async function handleLogout() {
+    chrome.storage.local.clear(() => {
+      console.log("User data cleared.");
+      document.getElementById("login-page").hidden = false;
+      document.getElementById("main-page").hidden = true;
+    });
+}
+
+
+document.getElementById("loginBtn").onclick = handleLogin;
+document.getElementById("logout-btn").onclick = handleLogout;
 document.getElementById("auth-btn").onclick = authenticate;
 document.getElementById("refresh-btn").onclick = refreshIngestionStatus;
 document.getElementById("submit-btn").onclick = submitQuery;

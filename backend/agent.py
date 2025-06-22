@@ -30,17 +30,16 @@ def context_retriever(filename: Optional[str], query: str) -> str:
     print("selected docuemnt : ", filename)
     
     if filename != None:
-        search_kwargs["filter"] = {"source": f"files/{filename}"}
+        search_kwargs["filter"] = {"source": filename}
     
-    retriever =  vectorstore.as_retriever(search_kwargs=search_kwargs)
-    docs = retriever.get_relevant_documents(query)
+    docs =  vectorstore.as_retriever(search_kwargs=search_kwargs).get_relevant_documents(query)
     
     context = "Retrieved context : \n"
 
     for i, doc in enumerate(docs):
         
         source = doc.to_json()["kwargs"]["metadata"]["source"]
-        page_label = doc.to_json()["kwargs"]["metadata"]["page_label"]
+        page_label = doc.to_json()["kwargs"]["metadata"].get("page_label", 0)
         chunk_index = doc.to_json()["kwargs"]["metadata"]["chunk_index"]
         page_content = doc.to_json()["kwargs"]["page_content"]
         

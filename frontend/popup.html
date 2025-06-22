@@ -1,29 +1,125 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <title>Drive Copilot</title>
   <style>
-    .file-item { padding: 8px; border-bottom: 1px solid #ccc; cursor: pointer; }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f6f8;
+      margin: 0;
+      padding: 0;
+      width: 500px;
+    }
+
+    h3 {
+      margin-bottom: 16px;
+    }
+
+    input, select, button {
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #login-page, #main-page {
+      max-width: 400px;
+      margin: 60px auto;
+      padding: 24px;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .section {
+      margin-top: 20px;
+    }
+
+    #query {
+      height: 80px;
+      resize: vertical;
+    }
+
+    #results {
+      margin-top: 12px;
+      background-color: #e9ecef;
+      padding: 12px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+    }
+
+    .file-item {
+      padding: 8px;
+      border-bottom: 1px solid #ccc;
+      cursor: pointer;
+    }
+
+  textarea {
+    padding: 10px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    height: 100px; /* controls visible lines */
+    resize: vertical; /* user can resize vertically */
+    font-family: inherit;
+    white-space: pre-wrap; /* ensures text wraps */
+    overflow-wrap: break-word;
+  }
+
   </style>
-   <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <button id="auth-btn">Connect Google Drive</button>
 
-  <div>
-    <button id="refresh-btn">Refresh</button>
-    <div id="status"></div>
+  <div id="login-page">
+    <h3>Login</h3>
+    <input id="username" type="text" placeholder="Username" />
+    <input id="password" type="password" placeholder="Password" />
+    <button id="loginBtn">Login</button>
+    <div id="result"></div>
   </div>
 
-  <div>
-    File : <select id="selected-file">
-      <option value="" selected>Select a file</option>
-    </select>
-    Query: <input id="query" style="height: 100px; width: 500px;"/>
-      <button id="submit-btn">submit</button>
+  <div id="main-page">
+    <div id="user"></div>
+    <button id="logout-btn">Logout</button>
+    <button id="auth-btn">Connect Google Drive</button>
+
+    <div class="section">
+      <button id="refresh-btn">Refresh</button>
+      <div id="status"></div>
+    </div>
+
+    <div class="section">
+      <!-- <label for="selected-file">File:</label>
+      <select id="selected-file">
+        <option value="" selected>Select a file</option>
+      </select> -->
+
+      <label for="query">Query:</label>
+      <textarea id="query" placeholder="Enter your query here"></textarea>
+
+      <button id="submit-btn">Submit</button>
       <div id="results"></div>
+    </div>
   </div>
-  
-  
+
   <script src="popup.js"></script>
 </body>
 </html>

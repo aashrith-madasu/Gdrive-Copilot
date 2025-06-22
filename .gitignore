@@ -8,3 +8,4 @@ faiss_index/
 __pycache__
 .env
 saved_files/
+backend/*.db

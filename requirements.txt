@@ -10,3 +10,5 @@
 # langchain-community 
 # unstructured 
 # openpyxl
+# SQLAlchemy
+passlib
