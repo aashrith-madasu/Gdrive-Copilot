@@ -4,7 +4,9 @@
 # google-api-python-client
 # fastapi
 # sentence-transformers
-# qdrant-client
 # uvicorn
 # chromadb
-langchain-googledrive
+# langchain-googledrive
+# langchain-community 
+# unstructured 
+# openpyxl

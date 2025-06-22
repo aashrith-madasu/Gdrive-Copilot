@@ -9,7 +9,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 from google.oauth2.credentials import Credentials
 
-from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader, CSVLoader
+from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader, UnstructuredExcelLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -24,15 +24,21 @@ embeddings = HuggingFaceEmbeddings(
 
 mime_type_path = {
     "application/pdf": "pdfs",
+    "application/vnd.google-apps.spreadsheet": "sheets",
 }
 
 
 async def download_files(mime_type: str):
     
-    auth_data = json.load(open("auth_data.json"))
+    auth = json.load(open("auth_data.json"))
+    client = json.load(open("../client_creds/web_client_creds.json"))
+    
     creds = Credentials(
-        token=auth_data["access_token"],
-        refresh_token=auth_data["refresh_token"]
+        token=auth["access_token"],
+        refresh_token=auth["refresh_token"],
+        token_uri=client["web"]["token_uri"],
+        client_id=client["web"]["client_id"],
+        client_secret=client["web"]["client_secret"]
     )
     drive_service = build('drive', 'v3', credentials=creds)
     
@@ -60,13 +66,23 @@ async def download_files(mime_type: str):
     
     # Download file
     for file in tqdm(all_files):
-        request = drive_service.files().get_media(fileId=file["id"])
-        filepath = os.path.join(save_path, file['name'])
+        
+        if mime_type == "application/vnd.google-apps.spreadsheet":
+            request = drive_service.files().export_media(
+                fileId=file["id"], 
+                mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            extension = ".xlsx"
+            
+        elif mime_type == "application/pdf":
+            request = drive_service.files().get_media(fileId=file["id"])
+            extension = ".pdf"
+            
+        filepath = os.path.join(save_path, file['name'] + extension)
         downloader = MediaIoBaseDownload(io.FileIO(filepath, 'wb'), request)
         done = False
         while not done:
             status, done = downloader.next_chunk()
-            # print(f"Download {int(status.progress() * 100)}%.")
 
     print(f"Files downloaded : {len(all_files)}")
     
@@ -74,26 +90,22 @@ async def download_files(mime_type: str):
     
 
 async def ingest_for_mime_type(mime_type: str):
-    """download a file
-    read and chunk it
-    embed the chunks
-    pust to vector db
-
-    Returns:
-        dict: {status}
-    """
     
     save_path = await download_files(mime_type=mime_type)
     
+    print(save_path)
+    
     if mime_type == "application/pdf":
-        _loader_cls = PyPDFLoader
-    elif mime_type == "":
-        _loader_cls = CSVLoader
+        my_loader_cls = PyPDFLoader
+    elif mime_type == "application/vnd.google-apps.spreadsheet":
+        my_loader_cls = UnstructuredExcelLoader
         
+    print(my_loader_cls.__name__)
+    
     loader = DirectoryLoader(
         save_path,
-        glob=f"{save_path}/*",              
-        loader_cls=_loader_cls,
+        glob="*",              
+        loader_cls=my_loader_cls,
         silent_errors=True
     )
     documents = loader.load()
@@ -115,7 +127,7 @@ async def ingest_for_mime_type(mime_type: str):
     print(f"Loaded {len(grouped_docs)} files, split into {len(final_chunks)} chunks.")  
     
     if os.path.exists("faiss_index"):
-        vectorstore = FAISS.load_local("faiss_index")
+        vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
         vectorstore.add_documents(documents=final_chunks)
     else:
         vectorstore = FAISS.from_documents(final_chunks, embeddings)
@@ -133,4 +145,7 @@ async def ingest_data():
         
         
         
+if __name__ == "__main__":
     
+    # asyncio.run(ingest_for_mime_type(mime_type="application/vnd.google-apps.spreadsheet"))
+    asyncio.run(ingest_data())

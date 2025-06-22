@@ -14,18 +14,17 @@ from utils import embeddings
 load_dotenv()
 
 
-vectorstore = FAISS.load_local(
-    folder_path="../faiss_index", 
-    embeddings=embeddings, 
-    allow_dangerous_deserialization=True
-)
-
-
 # Step 1: Define the downstream tool
 @tool
 def context_retriever(filename: Optional[str], query: str) -> str:
     """Processes a query, optionally with a filename."""
-    
+
+    vectorstore = FAISS.load_local(
+        folder_path="faiss_index", 
+        embeddings=embeddings, 
+        allow_dangerous_deserialization=True
+    )
+
     search_kwargs = {"k": 3}
     
     print("selected docuemnt : ", filename)
@@ -60,14 +59,13 @@ def context_retriever(filename: Optional[str], query: str) -> str:
     return context
 
 
-# Step 3: Create agent
-# llm = HuggingFaceEndpoint(repo_id="HuggingFaceH4/zephyr-7b-beta")
+
 llm = GoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=os.getenv("GOOGLE_API_KEY"))
 
 agent = initialize_agent(
     tools=[context_retriever],
     llm=llm,
-    agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,  # Use a compatible agent type
+    agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, 
     verbose=True
 )
 
