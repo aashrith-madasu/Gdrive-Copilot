@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .file-item { padding: 8px; border-bottom: 1px solid #ccc; cursor: pointer; }
+  </style>
+   <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <button id="auth-btn">Connect Google Drive</button>
+
+  <div>
+    <button id="refresh-btn">Refresh</button>
+    <div id="status"></div>
+  </div>
+
+  <div>
+    File : <select id="selected-file">
+      <option value="" selected>Select a file</option>
+    </select>
+    Query: <input id="query" style="height: 100px; width: 500px;"/>
+      <button id="submit-btn">submit</button>
+      <div id="results"></div>
+  </div>
+  
+  
+  <script src="popup.js"></script>
+</body>
+</html>

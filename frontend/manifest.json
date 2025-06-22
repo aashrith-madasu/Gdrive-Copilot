@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Drive Copilot",
+  "version": "1.0",
+  "permissions": ["identity", "scripting", "activeTab"],
+  "oauth2": {
+    "client_id": "609825494443-f9og80dnd6task5t71hbktacq1r8slks.apps.googleusercontent.com",
+    "scopes": ["https://www.googleapis.com/auth/drive.readonly"]
+  },
+  "background": {
+  },
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

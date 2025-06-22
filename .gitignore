@@ -1,0 +1,10 @@
+.venv
+client_creds/
+backend/auth_data.json
+*.csv
+*.ipynb
+files/
+faiss_index/
+__pycache__
+.env
+saved_files/
