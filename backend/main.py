@@ -1,24 +1,16 @@
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.oauth2.credentials import Credentials
-
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
+import os
+import json
+import asyncio
+import requests
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-import requests
-import json
-import asyncio
-import os
-import io
 
 from request_types import (
     AuthRequest, SearchRequest
 )
 from agent import agent
+from utils import ingest_data
 
 
 
@@ -46,63 +38,6 @@ def get_ingestion_status():
     return {"ingestion_status": ingestion_status,
             "files": filenames}
 
-
-async def ingest_data():
-    """download a file
-    read and chunk it
-    embed the chunks
-    pust to vector db
-
-    Returns:
-        dict: {status}
-    """
-    
-    auth_data = json.load(open("auth_data.json"))
-    creds = Credentials(
-        token=auth_data["access_token"],
-        refresh_token=auth_data["refresh_token"]
-    )
-    
-    drive_service = build('drive', 'v3', credentials=creds)
-    
-    print("Ingesting started ....")
-    
-    all_files = []
-    page_token = None
-
-    while True:
-        response = drive_service.files().list(
-            q="mimeType='application/pdf'",
-            fields="nextPageToken, files(id, name, mimeType, parents)",
-            pageSize=100,  # or smaller if needed
-            pageToken=page_token
-        ).execute()
-
-        all_files.extend(response.get('files', []))
-        page_token = response.get('nextPageToken')
-        # break
-        if not page_token:
-            break
-        
-    await asyncio.sleep(60)
-    
-    # Download file
-    file = all_files[10]
-    request = drive_service.files().get_media(fileId=file["id"])
-    os.makedirs("saved_files", exist_ok=True)
-    filename = "saved_files/" + file["name"]
-    fh = io.FileIO(filename, 'wb')
-    downloader = MediaIoBaseDownload(fh, request)
-    done = False
-    while not done:
-        status, done = downloader.next_chunk()
-        print(f"Download {int(status.progress() * 100)}%.")
-
-    print(f"File downloaded as {filename}")
-    
-    return { "status": "ok"}
-    
-    
 
 @app.post("/auth")
 async def authenticate(request: AuthRequest):

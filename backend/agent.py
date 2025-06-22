@@ -1,3 +1,6 @@
+import os
+from dotenv import load_dotenv
+
 from typing import Optional
 from langchain_core.tools import tool
 from langchain.agents import initialize_agent, AgentType
@@ -6,17 +9,10 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFLoader
 
-import os
-from dotenv import load_dotenv
+from utils import embeddings
 
 load_dotenv()
 
-
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-mpnet-base-v2",
-    model_kwargs={'device': 'cpu'},
-    encode_kwargs={'normalize_embeddings': False}
-)
 
 vectorstore = FAISS.load_local(
     folder_path="../faiss_index", 
@@ -54,6 +50,7 @@ def context_retriever(filename: Optional[str], query: str) -> str:
     
     print("len of docs: ", len(docs))
     
+    # TODO: modify this as well
     # if len(docs) == 0 and filename != None:
     #     # fetch the entire file as context
     #     loader = PyPDFLoader(f"../files/{filename}")
