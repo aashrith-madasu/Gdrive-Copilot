@@ -71,15 +71,6 @@ function refreshIngestionStatus() {
 
       document.getElementById("status").innerHTML = `<strong> Documents ingested : ${data.ingestion_status} </strong>`
 
-      for (let i in data.files) {
-        const file = data.files[i];
-
-        const option = document.createElement("option");
-        option.value = file
-        option.textContent = file;
-
-        document.getElementById("selected-file").appendChild(option);
-      }
     })
 
 }
@@ -146,9 +137,24 @@ async function handleLogout() {
     });
 }
 
+async function handleGetData() {
+
+    var data = await chrome.storage.local.get(["username"]);
+    
+    const res = await fetch(`${BACKEND_URL}/ingest_data`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: data.username })
+    });
+  const result = await res.json();
+  document.getElementById("status").innerHTML = `<strong> ${result.message} </strong>`
+}
+
 
 document.getElementById("loginBtn").onclick = handleLogin;
 document.getElementById("logout-btn").onclick = handleLogout;
 document.getElementById("auth-btn").onclick = authenticate;
 document.getElementById("refresh-btn").onclick = refreshIngestionStatus;
 document.getElementById("submit-btn").onclick = submitQuery;
+document.getElementById("get-data-btn").onclick = handleGetData;
+

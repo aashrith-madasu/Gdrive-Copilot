@@ -1,0 +1,13 @@
+{
+    "web": {
+        "client_id": "609825494443-r36gpv0vjf0s7r2q680e1h89n90a48tj.apps.googleusercontent.com",
+        "project_id": "learning-adk-462618",
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+        "client_secret": "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",
+        "redirect_uris": [
+            "https://minidhhloohbamlddjghdbmnjaejkmjb.chromiumapp.org"
+        ]
+    }
+}
