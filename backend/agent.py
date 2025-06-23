@@ -8,32 +8,15 @@ from langchain.agents import initialize_agent, AgentType
 from langchain_google_genai import GoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
 from langchain.docstore.document import Document
-from langchain_community.retrievers import BM25Retriever, EnsembleRetriever
+from langchain.retrievers import EnsembleRetriever
+from langchain_community.retrievers import BM25Retriever
 
 from ingest_data import embeddings
 
 
 load_dotenv()
 
-docs = []
-filepaths = json.load(open("filepaths.json"))
-for f in filepaths.values():
-    docs.append(
-        Document(
-            page_content=f["path_to_root"], 
-            metadata={"id": f["id"], "name": f["name"]}
-        )
-    )
-path_retriever = BM25Retriever.from_documents(docs)
 
-vectorstore = FAISS.load_local(
-    folder_path="index_document_content",
-    embeddings=embeddings,
-    allow_dangerous_deserialization=True
-)
-
-all_content_docs = vectorstore.docstore._dict.values()
-all_content_docs = list(all_content_docs) 
 
 
         
@@ -45,6 +28,29 @@ def retrieve_relevant_context(file_or_folder_name: Optional[str], is_folder: Opt
         is_folder (bool): whether or not the 'file_or_folder_name' is a folder
         cleaned_query: the main cleaned up query without the mention of the file or folder (if any)
     """
+    
+    ## retrivers
+    docs = []
+    filepaths = json.load(open("filepaths.json"))
+    for f in filepaths.values():
+        docs.append(
+            Document(
+                page_content=f["path_to_root"], 
+                metadata={"id": f["id"], "name": f["name"]}
+            )
+        )
+    path_retriever = BM25Retriever.from_documents(docs)
+
+    vectorstore = FAISS.load_local(
+        folder_path="index_document_content",
+        embeddings=embeddings,
+        allow_dangerous_deserialization=True
+    )
+
+    all_content_docs = vectorstore.docstore._dict.values()
+    all_content_docs = list(all_content_docs) 
+    
+    ######
     
     search_kwargs = {"k": 2}
     

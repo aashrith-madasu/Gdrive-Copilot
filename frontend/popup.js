@@ -1,14 +1,14 @@
 BACKEND_URL = "http://localhost:8000"
 
-// On popup load
-chrome.storage.local.get(["username", "userId"], (data) => {
-  if (data.username) {
-    document.getElementById("login-page").hidden = true;
-    document.getElementById("user").innerHTML = `User : ${data.username}`;
-  } else {
-    document.getElementById("main-page").hidden = true;
-  }
-});
+// // On popup load
+// chrome.storage.local.get(["username", "userId"], (data) => {
+//   if (data.username) {
+//     document.getElementById("login-page").hidden = true;
+//     document.getElementById("user").innerHTML = `User : ${data.username}`;
+//   } else {
+//     document.getElementById("main-page").hidden = true;
+//   }
+// });
 
 
 function authenticate() {
@@ -90,69 +90,91 @@ function submitQuery() {
 
     var final_result_str = data.response
 
-    final_result_str = final_result_str.replace(/<cite>(.*?)<\/cite>/g, '<span class="citation">$1</span>');
+    // final_result_str = final_result_str.replace(/<cite>(.*?)<\/cite>/g, );
 
-    document.getElementById("results").innerHTML = final_result_str
+    let citationMap = new Map();
+    let citeRegex = /<cite>(.*?)<\/cite>/g;
+    let count = 1;
+
+    let output = final_result_str.replace(citeRegex, (_, match) => {
+      if (!citationMap.has(match)) {
+        citationMap.set(match, count++);
+      }
+      return `<span class="citation">${citationMap.get(match)}</span>`
+    });
+
+    // Step 3: Build references section
+    let references = "<h3>References</h3><ol>";
+    for (let [key, index] of citationMap.entries()) {
+      references += `<li>${key}</li>`;
+    }
+    references += "</ol>";
+
+    // Step 4: Combine output
+    let finalOutput = output + "<br><br>" + references;
+
+    console.log(finalOutput);
+
+
+    document.getElementById("results").innerHTML = finalOutput
   })
 
 }
 
-async function handleLogin() {
+// async function handleLogin() {
 
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
+//   const username = document.getElementById("username").value;
+//   const password = document.getElementById("password").value;
 
-  const res = await fetch(`${BACKEND_URL}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password })
-  });
+//   const res = await fetch(`${BACKEND_URL}/login`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify({ username, password })
+//   });
 
-  const result = await res.json();
-  const resultEl = document.getElementById("result");
+//   const result = await res.json();
+//   const resultEl = document.getElementById("result");
 
-  if (res.ok) {
-    resultEl.innerText = "Login successful!";
+//   if (res.ok) {
+//     resultEl.innerText = "Login successful!";
 
-    // ✅ Store username and user_id
-    chrome.storage.local.set({
-      username: username,
-      userId: result.user_id
-    }, () => {
-      document.getElementById("user").innerHTML = `User : ${username}`;
-      document.getElementById("login-page").hidden = true;
-      document.getElementById("main-page").hidden = false;
-    });
+//     // ✅ Store username and user_id
+//     chrome.storage.local.set({
+//       username: username,
+//       userId: result.user_id
+//     }, () => {
+//       document.getElementById("user").innerHTML = `User : ${username}`;
+//       document.getElementById("login-page").hidden = true;
+//       document.getElementById("main-page").hidden = false;
+//     });
 
-  } else {
-    resultEl.innerText = result.detail || "Login failed.";
-  }
-}
+//   } else {
+//     resultEl.innerText = result.detail || "Login failed.";
+//   }
+// }
 
-async function handleLogout() {
-    chrome.storage.local.clear(() => {
-      console.log("User data cleared.");
-      document.getElementById("login-page").hidden = false;
-      document.getElementById("main-page").hidden = true;
-    });
-}
+// async function handleLogout() {
+//     chrome.storage.local.clear(() => {
+//       console.log("User data cleared.");
+//       document.getElementById("login-page").hidden = false;
+//       document.getElementById("main-page").hidden = true;
+//     });
+// }
 
 async function handleGetData() {
 
     var data = await chrome.storage.local.get(["username"]);
     
     const res = await fetch(`${BACKEND_URL}/ingest_data`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: data.username })
+      method: "GET",
     });
   const result = await res.json();
   document.getElementById("status").innerHTML = `<strong> ${result.message} </strong>`
 }
 
 
-document.getElementById("loginBtn").onclick = handleLogin;
-document.getElementById("logout-btn").onclick = handleLogout;
+// document.getElementById("loginBtn").onclick = handleLogin;
+// document.getElementById("logout-btn").onclick = handleLogout;
 document.getElementById("auth-btn").onclick = authenticate;
 document.getElementById("refresh-btn").onclick = refreshIngestionStatus;
 document.getElementById("submit-btn").onclick = submitQuery;

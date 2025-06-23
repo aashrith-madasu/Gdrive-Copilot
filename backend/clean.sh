@@ -1,1 +1,1 @@
-rm -rf index_document_content local_files filepaths.json
+rm -rf index_document_content local_files filepaths.json auth_data.json

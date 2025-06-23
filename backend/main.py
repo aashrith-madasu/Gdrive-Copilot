@@ -34,71 +34,70 @@ app.add_middleware(
 )
 
 
-# Dependency: get db session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# # Dependency: get db session
+# def get_db():
+#     db = SessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
 
-# Utility: hash password
-def hash_password(password: str):
-    return bcrypt.hash(password)
+# # Utility: hash password
+# def hash_password(password: str):
+#     return bcrypt.hash(password)
 
-# Utility: verify password
-def verify_password(plain, hashed):
-    return bcrypt.verify(plain, hashed)
+# # Utility: verify password
+# def verify_password(plain, hashed):
+#     return bcrypt.verify(plain, hashed)
 
 
-@app.post("/register", response_model=UserOut)
-def register(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(models.User).filter(models.User.username == user.username).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
+# @app.post("/register", response_model=UserOut)
+# def register(user: UserCreate, db: Session = Depends(get_db)):
+#     db_user = db.query(models.User).filter(models.User.username == user.username).first()
+#     if db_user:
+#         raise HTTPException(status_code=400, detail="Username already registered")
     
-    hashed_pw = hash_password(user.password)
-    new_user = models.User(username=user.username, hashed_password=hashed_pw)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+#     hashed_pw = hash_password(user.password)
+#     new_user = models.User(username=user.username, hashed_password=hashed_pw)
+#     db.add(new_user)
+#     db.commit()
+#     db.refresh(new_user)
+#     return new_user
 
 
-@app.post("/login")
-def login(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(models.User).filter(models.User.username == user.username).first()
+# @app.post("/login")
+# def login(user: UserCreate, db: Session = Depends(get_db)):
+#     db_user = db.query(models.User).filter(models.User.username == user.username).first()
     
-    if not db_user:
-        # register
-        print("Registering new user... ")
-        if len(user.username) < 5 or len(user.password) < 5:
-            raise HTTPException(status_code=401, detail="Username or password too small")
+#     if not db_user:
+#         # register
+#         print("Registering new user... ")
+#         if len(user.username) < 5 or len(user.password) < 5:
+#             raise HTTPException(status_code=401, detail="Username or password too small")
         
-        hashed_pw = hash_password(user.password)
-        new_user = models.User(username=user.username, hashed_password=hashed_pw)
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
+#         hashed_pw = hash_password(user.password)
+#         new_user = models.User(username=user.username, hashed_password=hashed_pw)
+#         db.add(new_user)
+#         db.commit()
+#         db.refresh(new_user)
         
-        return {"message": "Register successful", "user_id": new_user.id}
+#         return {"message": "Register successful", "user_id": new_user.id}
         
-    elif not verify_password(user.password, db_user.hashed_password):
-        print("Password incorrect")
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+#     elif not verify_password(user.password, db_user.hashed_password):
+#         print("Password incorrect")
+#         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    else:
-        print("User logged in ... ")
-        set_current_user(db_user.id)
-        return {"message": "Login successful", "user_id": db_user.id}
+#     else:
+#         print("User logged in ... ")
+#         set_current_user(db_user.id)
+#         return {"message": "Login successful", "user_id": db_user.id}
 
 
 
 @app.get("/ingestion_status")
 def get_ingestion_status():
     
-    local_vectorstore_path = f"faiss_local_vectorstore/{get_current_user()}"
-    ingestion_status = os.path.exists(local_vectorstore_path)
+    ingestion_status = os.path.exists("index_document_content")
     
     return {"ingestion_status": ingestion_status}
 
@@ -120,10 +119,6 @@ async def authenticate(request: AuthRequest):
     
     json.dump(auth_data, open("auth_data.json", "w+"))
     
-    # print("Async Task created ..")
-    # asyncio.create_task(ingest_data())
-    # print("Returning...")
-
     return { "status": "ok"}
 
 
@@ -169,21 +164,16 @@ def search(request: SearchRequest):
     user_query = request.query
 
     prompt = (
-        # f"You are an intelligent assistant. The user has access to these files: {filenames}.\n"
-        # "If the query mentions a file from this list, extract its name. Otherwise, assume no file was mentioned.\n"
-        # "Then call the 'context_retriever' tool with filename (if any) and a cleaned-up query.\n"
-        # "The 'context_retriever' tool returns context with relevant citation in the format : (source file, page number, chunk)"
-        # "Please use these provided citations in your final answer and cite every line you output in the same format enclosed in <cite></cite> tags."
-        # "For example: <cite>(citation info)</cite>\n"
-        # f"User query: {user_query}"
         f"You are an intelligent assistant that filters the user query and calls the tool 'retrieve_relevant_context'\n"
         "If the query mentions any source document (can be a file name or a folder name that may provide the context to answer the question)\n"
         "extract the source and whether or not it is a folder. Otherwise, assume no source was mentioned.\n"
         "Then call the 'retrieve_relevant_context' tool with source (if any) and a cleaned-up query.\n"
         "The 'retrieve_relevant_context' tool returns context with relevant citation in the format : (source_file, page_number, chunk_id)\n"
         "Please use these provided citations in your final answer and cite every line you output in the same format enclosed in <cite></cite> tags.\n"
-        "For example: <cite>(file1, page 10, chuck 10)</cite>\n"
-        f"User query: {user_query}"
+        "For example: <cite>(file_1, page 10, chunk 11)</cite>"
+        # "For example, create citations like: <cite>1</cite>\n"
+        # "And create a references section at the end like : References: \n <cite>1</cite> -> (file1, page 10, chuck 10)\n\n"
+        f"\n\nUser query: {user_query}"
     )
 
     response = agent.invoke(prompt)
