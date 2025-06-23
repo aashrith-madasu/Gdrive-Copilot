@@ -1,0 +1,1 @@
+rm -rf index_document_content local_files filepaths.json

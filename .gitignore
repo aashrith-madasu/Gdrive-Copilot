@@ -12,4 +12,3 @@ backend/*.db
 backend/index_document_content
 backend/local_files
 filepaths.json
-backend/*.sh
