@@ -69,7 +69,12 @@ function refreshIngestionStatus() {
     .then(data => {
       console.log("ingestion status response: ", data)
 
-      document.getElementById("status").innerHTML = `<strong> Documents ingested : ${data.ingestion_status} </strong>`
+      if (data.ingestion_status) {
+        document.getElementById("status").innerHTML = `<strong> Documents ingestion completed </strong>`
+      } else {
+        document.getElementById("status").innerHTML = `<strong> Documents ingestion in process ... </strong>`
+      }
+
 
     })
 
@@ -104,7 +109,7 @@ function submitQuery() {
     });
 
     // Step 3: Build references section
-    let references = "<h3>References</h3><ol>";
+    let references = "<br><br><p>References : </p><ol>";
     for (let [key, index] of citationMap.entries()) {
       references += `<li>${key}</li>`;
     }
@@ -163,8 +168,6 @@ function submitQuery() {
 
 async function handleGetData() {
 
-    var data = await chrome.storage.local.get(["username"]);
-    
     const res = await fetch(`${BACKEND_URL}/ingest_data`, {
       method: "GET",
     });

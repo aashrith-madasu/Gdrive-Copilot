@@ -17,8 +17,6 @@ from ingest_data import embeddings
 load_dotenv()
 
 
-
-
         
 @tool
 def retrieve_relevant_context(file_or_folder_name: Optional[str], is_folder: Optional[bool], cleaned_query: str) -> str:
@@ -53,6 +51,7 @@ def retrieve_relevant_context(file_or_folder_name: Optional[str], is_folder: Opt
     ######
     
     search_kwargs = {"k": 2}
+    file_docs = None
     
     if file_or_folder_name:
 
@@ -66,12 +65,15 @@ def retrieve_relevant_context(file_or_folder_name: Optional[str], is_folder: Opt
         
         faiss_retriever = vectorstore.as_retriever(search_kwargs=search_kwargs)
         
+        file_docs = [doc for doc in all_content_docs if doc.metadata["id"] == file_id]
+        
         bm25_retriever_content = BM25Retriever.from_documents(
-            documents=[doc for doc in all_content_docs if doc.metadata["id"] == file_id],
+            documents=file_docs,
             k=2
         )
     
     else:
+        # Search over all docs
         faiss_retriever = vectorstore.as_retriever(search_kwargs=search_kwargs)
         
         bm25_retriever_content = BM25Retriever.from_documents(
@@ -91,6 +93,9 @@ def retrieve_relevant_context(file_or_folder_name: Optional[str], is_folder: Opt
     
     print(len(ret_docs))
     
+    if len(ret_docs) == 0 and file_docs != None:
+        ret_docs = file_docs
+    
     context = "Context : \n\n"
     
     for i, doc in enumerate(ret_docs):
@@ -100,6 +105,7 @@ def retrieve_relevant_context(file_or_folder_name: Optional[str], is_folder: Opt
         page_content = doc.page_content
         
         context += f"Context {i} (source file: {filepath}, page number {page_label}, chunk: {chunk_index}) : \n\n {page_content} \n\n"
+        
         
     return context
 

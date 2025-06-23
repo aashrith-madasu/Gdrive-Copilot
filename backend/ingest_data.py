@@ -163,6 +163,12 @@ async def download_files(all_files, save_path, drive_service):
                 mimeType='application/pdf'
             )
             extension = ".pdf"
+        
+        elif file["mimeType"] == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+            request = drive_service.files().get_media(fileId=file["id"])
+            extension = ".xlsx"
+        else:
+            continue
             
         filepath = os.path.join(save_path, file['id'] + extension)
         downloader = MediaIoBaseDownload(io.FileIO(filepath, 'wb'), request)
@@ -187,7 +193,7 @@ def load_files_and_chunk(files_dir: str, all_mime_types: List, all_files):
         if mime_type == "application/pdf":
             my_loader_cls = PyPDFLoader
             pattern = "*.pdf"
-        elif mime_type == "application/vnd.google-apps.spreadsheet":
+        elif mime_type == "application/vnd.google-apps.spreadsheet" or mime_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
             my_loader_cls = UnstructuredExcelLoader
             pattern = "*.xlsx"
             
