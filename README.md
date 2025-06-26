@@ -6,3 +6,9 @@ It can answer any of your questions about your files by citing sources.
 
 ## Video Demo
 https://www.loom.com/share/cf0fce4ed96c48d090afda66246adeaa?sid=3f933dd4-7d18-420b-b4a0-ef92af2ec858
+
+## Todos
+- Chunk overlap only allowed between chunks of the same file.
+- Faster embedding generation
+- Better file content and file location binding
+- Support for Image, Audio and Video files
